@@ -33,15 +33,30 @@ func handleConnection(c net.Conn) {
 	reader := bufio.NewReader(c)
 
 	// Read the command line from the client
-	line, err := reader.ReadBytes('\n')
+	line, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Fprintf(c, "error reading command: %v\n", err)
 		return
 	}
 
-	parts := strings.SplitN(strings.TrimSpace(string(line)), " ", 2)
+	parts := strings.SplitN(strings.TrimSpace(line), " ", 2)
 	if len(parts) != 2 {
-		fmt.Fprintln(c, "invalid command format: expected format 'COMMAND RESOURCE'")
+		fmt.Fprintf(c, "invalid command format: expected format 'COMMAND RESOURCE'\n")
 		return
 	}
+
+	command := parts[0]
+	resource := parts[1]
+	log.Printf("Received command: %s %s\n", command, resource)
+
+	switch command {
+	case "GET":
+		handleGet(c, resource)
+	default:
+		fmt.Fprintf(c, "Unknown commmand: %s\n", command)
+	}
+}
+
+func handleGet(c net.Conn, resource string) {
+	fmt.Fprintf(c, "GET command received for resource: %s\n", resource)
 }
