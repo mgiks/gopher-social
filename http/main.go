@@ -1,32 +1,33 @@
 package main
 
 import (
-	"log"
 	"net/http"
 )
 
-type server struct {
+type api struct {
 	addr string
 }
 
-func (s server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		switch r.URL.Path {
-		case "/":
-			w.Write([]byte("index page\n"))
-			return
-		case "/users":
-			w.Write([]byte("users page\n"))
-			return
-		}
-	default:
-		w.Write([]byte("404 page\n"))
-		return
-	}
+func (a api) getUsersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Sent a list of users"))
+}
+
+func (a api) createUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Created user"))
 }
 
 func main() {
-	s := server{addr: ":8080"}
-	log.Fatal(http.ListenAndServe(s.addr, s))
+	api := api{addr: ":8080"}
+
+	mux := http.NewServeMux()
+
+	s := &http.Server{
+		Addr:    api.addr,
+		Handler: mux,
+	}
+
+	mux.HandleFunc("GET /users", api.getUsersHandler)
+	mux.HandleFunc("POST /users", api.createUserHandler)
+
+	s.ListenAndServe()
 }
