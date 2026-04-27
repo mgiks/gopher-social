@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/mgiks/gopher-social/internal/env"
+	"github.com/mgiks/gopher-social/internal/store"
 )
 
 func main() {
@@ -11,7 +12,12 @@ func main() {
 		addr: env.GetString("PORT", ":8080"),
 	}
 
-	app := application{config: cfg}
+	store := store.NewStore(nil)
+
+	app := application{
+		config: cfg,
+		store:  store,
+	}
 
 	mux := app.mount()
 
