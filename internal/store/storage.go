@@ -7,7 +7,7 @@ import (
 
 type Store struct {
 	Posts interface {
-		Create(context.Context) error
+		Create(context.Context, *Post) error
 	}
 	Users interface {
 		Create(context.Context) error
