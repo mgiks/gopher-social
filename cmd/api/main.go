@@ -29,6 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	defer db.Close()
 	store := store.NewStore(db)
 
 	app := application{
