@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/lib/pq"
 )
@@ -68,7 +69,12 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 	)
 
 	if err != nil {
-		return Post{}, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return Post{}, ErrNotFound
+		default:
+			return Post{}, err
+		}
 	}
 
 	return post, nil
