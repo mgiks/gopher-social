@@ -16,7 +16,7 @@ type application struct {
 }
 
 type config struct {
-	addr string
+	port string
 }
 
 func (app application) mount() http.Handler {
@@ -36,7 +36,7 @@ func (app application) mount() http.Handler {
 
 func (app application) run(mux http.Handler) error {
 	srv := &http.Server{
-		Addr:         app.config.addr,
+		Addr:         app.config.port,
 		Handler:      mux,
 		WriteTimeout: time.Second * 30,
 		ReadTimeout:  time.Second * 10,

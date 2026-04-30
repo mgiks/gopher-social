@@ -9,7 +9,7 @@ import (
 
 func main() {
 	cfg := config{
-		addr: env.GetString("PORT", ":8080"),
+		port: env.GetString("PORT", ":8080"),
 	}
 
 	store := store.NewStore(nil)
