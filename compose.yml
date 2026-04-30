@@ -6,8 +6,11 @@ services:
     container_name: postgres-db
     environment:
       POSTGRES_DB: gopher-social
+      PGDATABASE: gopher-social
       POSTGRES_USER: admin
+      PGUSER: admin
       POSTGRES_PASSWORD: adminpassword
+      PGPASSWORD: adminpassword
     volumes:
       - db-data:/var/lib/postgressql/data
     ports:
