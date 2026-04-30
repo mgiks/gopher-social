@@ -36,3 +36,13 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 	}
 }
+
+func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
+	post, err := app.store.Posts.GetByID(r.Context(), 1)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, post)
+}
