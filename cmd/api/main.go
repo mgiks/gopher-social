@@ -8,6 +8,8 @@ import (
 	"github.com/mgiks/gopher-social/internal/store"
 )
 
+const apiVersion = "0.0.1"
+
 func main() {
 	cfg := config{
 		port: env.GetString("PORT", ":8080"),
@@ -17,6 +19,7 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+		env: env.GetString("ENV", "development"),
 	}
 
 	db, err := db.New(

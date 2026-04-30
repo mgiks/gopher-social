@@ -18,6 +18,7 @@ type application struct {
 type config struct {
 	port string
 	db   dbConfig
+	env  string
 }
 
 type dbConfig struct {
