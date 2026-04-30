@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/store"
 )
@@ -18,7 +19,17 @@ func main() {
 		},
 	}
 
-	store := store.NewStore(nil)
+	db, err := db.New(
+		cfg.db.url,
+		cfg.db.maxOpenConns,
+		cfg.db.maxIdleConns,
+		cfg.db.maxIdleTime,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	store := store.NewStore(db)
 
 	app := application{
 		config: cfg,
