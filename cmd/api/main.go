@@ -30,6 +30,8 @@ func main() {
 	}
 
 	defer db.Close()
+	log.Println("database connection pool established")
+
 	store := store.NewStore(db)
 
 	app := application{
