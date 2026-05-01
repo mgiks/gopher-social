@@ -80,3 +80,50 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 
 	return post, nil
 }
+
+func execQuery(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
+	res, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count < 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	query := `
+		DELETE FROM comments WHERE id = $1
+	`
+	if err := execQuery(ctx, tx, query, id); err != nil {
+		return err
+	}
+
+	query = `
+		DELETE FROM posts WHERE id = $1
+	`
+	if err := execQuery(ctx, tx, query, id); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
