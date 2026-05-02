@@ -112,7 +112,9 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 		DELETE FROM comments WHERE id = $1
 	`
 	if err := execQueryWithTx(ctx, tx, query, id); err != nil {
-		return err
+		if !errors.Is(err, ErrNotFound) {
+			return err
+		}
 	}
 
 	query = `
