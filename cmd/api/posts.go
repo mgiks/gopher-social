@@ -95,9 +95,7 @@ func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := writeJSON(w, http.StatusNoContent, ""); err != nil {
-		app.internalServerError(w, r, err)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type UpdatePostPayload struct {
