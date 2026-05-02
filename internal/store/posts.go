@@ -133,18 +133,19 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 func (s PostStore) Update(ctx context.Context, post *Post) error {
 	query := `
 		UPDATE posts 
-		SET title = $1, content = $2, tags = $3 
+		SET title = $1, content = $2, tags = $3, updated_at = NOW()
 		WHERE id = $4	
+		RETURNING updated_at
 	`
 
-	if _, err := s.db.ExecContext(
+	if err := s.db.QueryRowContext(
 		ctx,
 		query,
 		post.Title,
 		post.Content,
 		pq.Array(post.Tags),
 		post.ID,
-	); err != nil {
+	).Scan(&post.UpdatedAt); err != nil {
 		return err
 	}
 
