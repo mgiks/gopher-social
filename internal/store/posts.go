@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/lib/pq"
 )
@@ -131,54 +130,22 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s PostStore) UpdateByID(
-	ctx context.Context,
-	id int64,
-	title, content *string,
-	tags []string,
-) error {
-	if title == nil && content == nil && tags == nil {
-		return nil
-	}
+func (s PostStore) Update(ctx context.Context, post *Post) error {
+	query := `
+		UPDATE posts 
+		SET title = $1, content = $2, tags = $3 
+		WHERE id = $4	
+	`
 
-	query := "UPDATE posts SET "
-	args := []any{}
-
-	if title != nil {
-		args = append(args, *title)
-		query += fmt.Sprintf("title = $%d", len(args))
-	}
-	if content != nil {
-		args = append(args, *content)
-		if len(args) > 1 {
-			query += ", "
-		}
-		query += fmt.Sprintf("content = $%d", len(args))
-	}
-	if tags != nil {
-		args = append(args, pq.Array(tags))
-		if len(args) > 1 {
-			query += ", "
-		}
-		query += fmt.Sprintf("tags = $%d", len(args))
-	}
-
-	query += fmt.Sprintf(" WHERE id = $%d", len(args)+1)
-
-	args = append(args, id)
-
-	res, err := s.db.ExecContext(ctx, query, args...)
-	if err != nil {
+	if _, err := s.db.ExecContext(
+		ctx,
+		query,
+		post.Title,
+		post.Content,
+		pq.Array(post.Tags),
+		post.ID,
+	); err != nil {
 		return err
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if count < 1 {
-		return ErrNotFound
 	}
 
 	return nil

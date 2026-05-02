@@ -84,18 +84,13 @@ func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type UpdatePostPayload struct {
-	Title   *string  `json:"title" validate:"max=100"`
-	Content *string  `json:"content" validate:"max=1000"`
+	Title   *string  `json:"title" validate:"omitempty,max=100"`
+	Content *string  `json:"content" validate:"omitempty,max=1000"`
 	Tags    []string `json:"tags"`
 }
 
 func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
-	idParam := chi.URLParam(r, "postID")
-	id, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	post := getPostFromContext(r.Context())
 
 	var payload UpdatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
@@ -103,22 +98,27 @@ func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.store.Posts.UpdateByID(
-		r.Context(),
-		id,
-		payload.Title, payload.Content,
-		payload.Tags,
-	); err != nil {
-		switch err {
-		case store.ErrNotFound:
-			app.badRequestResponse(w, r, err)
-		default:
-			app.internalServerError(w, r, err)
-		}
+	if err := validateJSON(payload); err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	if err := writeJSON(w, http.StatusOK, payload); err != nil {
+	if payload.Content != nil {
+		post.Content = *payload.Content
+	}
+	if payload.Title != nil {
+		post.Title = *payload.Title
+	}
+	if payload.Tags != nil {
+		post.Tags = payload.Tags
+	}
+
+	if err := app.store.Posts.Update(r.Context(), &post); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJSON(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
