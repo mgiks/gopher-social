@@ -101,8 +101,9 @@ func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type UpdatePostPayload struct {
-	Title   *string `json:"title" validate:"max=100"`
-	Content *string `json:"content" validate:"max=1000"`
+	Title   *string  `json:"title" validate:"max=100"`
+	Content *string  `json:"content" validate:"max=1000"`
+	Tags    []string `json:"tags"`
 }
 
 func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +120,12 @@ func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.store.Posts.UpdateByID(r.Context(), id, payload.Title, payload.Content); err != nil {
+	if err := app.store.Posts.UpdateByID(
+		r.Context(),
+		id,
+		payload.Title, payload.Content,
+		payload.Tags,
+	); err != nil {
 		switch err {
 		case store.ErrNotFound:
 			app.badRequestResponse(w, r, err)

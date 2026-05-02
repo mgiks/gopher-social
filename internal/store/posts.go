@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/lib/pq"
 )
@@ -128,24 +129,39 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s PostStore) UpdateByID(ctx context.Context, id int64, title, content *string) error {
-	if title == nil && content == nil {
+func (s PostStore) UpdateByID(
+	ctx context.Context,
+	id int64,
+	title, content *string,
+	tags []string,
+) error {
+	if title == nil && content == nil && tags == nil {
 		return nil
 	}
 
-	query := "UPDATE posts "
+	query := "UPDATE posts SET "
 	args := []any{}
 
-	if title != nil && content == nil {
-		query += "SET title = $1 WHERE id = $2 "
+	if title != nil {
 		args = append(args, *title)
-	} else if title == nil && content != nil {
-		query += "SET content = $1 WHERE id = $2"
-		args = append(args, *content)
-	} else {
-		query += "SET title = $1, content = $2 WHERE id = $3"
-		args = append(args, *title, *content)
+		query += fmt.Sprintf("title = $%d", len(args))
 	}
+	if content != nil {
+		args = append(args, *content)
+		if len(args) > 1 {
+			query += ", "
+		}
+		query += fmt.Sprintf("content = $%d", len(args))
+	}
+	if tags != nil {
+		args = append(args, pq.Array(tags))
+		if len(args) > 1 {
+			query += ", "
+		}
+		query += fmt.Sprintf("tags = $%d", len(args))
+	}
+
+	query += fmt.Sprintf(" WHERE id = $%d", len(args)+1)
 
 	args = append(args, id)
 
