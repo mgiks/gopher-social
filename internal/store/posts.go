@@ -127,3 +127,41 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 
 	return nil
 }
+
+func (s PostStore) UpdateByID(ctx context.Context, id int64, title, content *string) error {
+	if title == nil && content == nil {
+		return nil
+	}
+
+	query := "UPDATE posts "
+	args := []any{}
+
+	if title != nil && content == nil {
+		query += "SET title = $1 WHERE id = $2 "
+		args = append(args, *title)
+	} else if title == nil && content != nil {
+		query += "SET content = $1 WHERE id = $2"
+		args = append(args, *content)
+	} else {
+		query += "SET title = $1, content = $2 WHERE id = $3"
+		args = append(args, *title, *content)
+	}
+
+	args = append(args, id)
+
+	res, err := s.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count < 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
