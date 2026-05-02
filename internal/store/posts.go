@@ -82,7 +82,7 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 	return post, nil
 }
 
-func execQuery(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
+func execQueryWithTx(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
 	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -111,14 +111,14 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 	query := `
 		DELETE FROM comments WHERE id = $1
 	`
-	if err := execQuery(ctx, tx, query, id); err != nil {
+	if err := execQueryWithTx(ctx, tx, query, id); err != nil {
 		return err
 	}
 
 	query = `
 		DELETE FROM posts WHERE id = $1
 	`
-	if err := execQuery(ctx, tx, query, id); err != nil {
+	if err := execQueryWithTx(ctx, tx, query, id); err != nil {
 		return err
 	}
 
