@@ -71,8 +71,8 @@ func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := app.store.Posts.DeleteByID(r.Context(), id); err != nil {
-		switch err {
-		case store.ErrNotFound:
+		switch {
+		case errors.Is(err, store.ErrNotFound):
 			app.badRequestResponse(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
@@ -114,6 +114,12 @@ func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := app.store.Posts.Update(r.Context(), &post); err != nil {
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			app.conflictResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
 		app.internalServerError(w, r, err)
 		return
 	}

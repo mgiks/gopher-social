@@ -134,7 +134,7 @@ func (s PostStore) Update(ctx context.Context, post *Post) error {
 	query := `
 		UPDATE posts 
 		SET title = $1, content = $2, tags = $3, updated_at = NOW()
-		WHERE id = $4	
+		WHERE id = $4 AND updated_at = $5
 		RETURNING updated_at
 	`
 
@@ -145,8 +145,14 @@ func (s PostStore) Update(ctx context.Context, post *Post) error {
 		post.Content,
 		pq.Array(post.Tags),
 		post.ID,
+		post.UpdatedAt,
 	).Scan(&post.UpdatedAt); err != nil {
-		return err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNotFound
+		default:
+			return err
+		}
 	}
 
 	return nil
