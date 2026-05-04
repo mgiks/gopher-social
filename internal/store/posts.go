@@ -29,6 +29,9 @@ func (s PostStore) Create(ctx context.Context, post *Post) error {
 		VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -53,6 +56,9 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 		SELECT id, content, title, user_id, tags, created_at, updated_at FROM posts
 		WHERE id = $1
 	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	var post Post
 	err := s.db.QueryRowContext(
@@ -81,24 +87,6 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 	return post, nil
 }
 
-func execQueryWithTx(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
-	res, err := tx.ExecContext(ctx, query, args...)
-	if err != nil {
-		return err
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if count < 1 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
 func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -106,6 +94,9 @@ func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
 	}
 
 	defer tx.Rollback()
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	query := `
 		DELETE FROM comments WHERE id = $1
@@ -138,6 +129,9 @@ func (s PostStore) Update(ctx context.Context, post *Post) error {
 		RETURNING updated_at
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	if err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -153,6 +147,24 @@ func (s PostStore) Update(ctx context.Context, post *Post) error {
 		default:
 			return err
 		}
+	}
+
+	return nil
+}
+
+func execQueryWithTx(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
+	res, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count < 1 {
+		return ErrNotFound
 	}
 
 	return nil

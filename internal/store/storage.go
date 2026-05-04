@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var (
-	ErrNotFound = errors.New("record not found")
+	ErrNotFound          = errors.New("record not found")
+	QueryTimeoutDuration = time.Second * 5
 )
 
 type Store struct {
