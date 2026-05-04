@@ -1,0 +1,5 @@
+ALTER TABLE comments
+    ALTER COLUMN post_id DROP DEFAULT;
+
+ALTER TABLE comments
+    ALTER COLUMN user_id DROP DEFAULT;
