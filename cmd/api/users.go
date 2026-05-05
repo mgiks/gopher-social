@@ -41,9 +41,7 @@ func (app application) followUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
-		app.internalServerError(w, r, err)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (app application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,9 +59,7 @@ func (app application) unfollowUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
-		app.internalServerError(w, r, err)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type userKey string
