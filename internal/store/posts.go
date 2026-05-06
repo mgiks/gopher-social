@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/lib/pq"
 )
@@ -158,20 +159,39 @@ func (s PostStore) Update(ctx context.Context, post *Post) error {
 	return nil
 }
 
-func (s PostStore) GetUserFeed(ctx context.Context, userID int64) ([]PostWithMetadata, error) {
+func (s PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFeedQuery) ([]PostWithMetadata, error) {
 	query := `
-		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, u.username, COUNT(c.id) AS comments_count FROM posts p
+		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, u.username, COUNT(c.id) AS comments_count 
+		FROM posts p
 		LEFT JOIN comments c ON p.id = c.post_id
 		LEFT JOIN users u ON p.user_id = u.id
-		LEFT JOIN followers f ON f.followee_id = p.user_id OR p.user_id = $1
-		WHERE f.follower_id = $1 OR p.user_id = $1
+		LEFT JOIN followers f ON f.followee_id = p.user_id
+		WHERE (f.follower_id = $1 OR p.user_id = $1) 
+			AND (p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') 
+			AND ($5 <@ p.tags OR $5 = '{}')
+			AND ($6::timestamptz <= p.created_at AND p.created_at < $7::timestamptz)
 		GROUP BY p.id, u.username
-		ORDER BY p.created_at DESC
+		ORDER BY p.created_at ` + fq.Sort + ` 
+		LIMIT $2
+		OFFSET $3
 	`
+
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query, userID)
+	fmt.Println(fq.Since, fq.Until)
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userID,
+		fq.Limit,
+		fq.Offset,
+		fq.Search,
+		pq.Array(fq.Tags),
+		fq.Since,
+		fq.Until,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +207,7 @@ func (s PostStore) GetUserFeed(ctx context.Context, userID int64) ([]PostWithMet
 			&post.Title,
 			&post.Content,
 			&post.CreatedAt,
-			pq.Array(post.Tags),
+			pq.Array(&post.Tags),
 			&post.User.Username,
 			&post.CommentCount,
 		)
