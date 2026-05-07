@@ -10,6 +10,19 @@ import (
 	"github.com/mgiks/gopher-social/internal/store"
 )
 
+// GetUser godoc
+//
+//	@Summary		Fetches a user profile
+//	@Description	Fetches a user profile by ID
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		int	true	"User ID"
+//	@Success		200		{object}	apiResponse{data=store.User}
+//	@Failure		404		{object}	apiError	"User not found"
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/users/{userID} [get]
 func (app application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromContext(r.Context())
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
@@ -21,6 +34,21 @@ type FollowUserPayload struct {
 	UserID int64 `json:"user_id" validate:"required"`
 }
 
+// FollowUser godoc
+//
+//	@Summary		Follows a user
+//	@Description	Follows a user by ID
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path	int	true	"User ID"
+//	@Success		200		"User followed"
+//	@Failure		400		{object}	apiError	"User payload missing"
+//	@Failure		404		{object}	apiError	"User not found"
+//	@Failure		409		{object}	apiError	"Tried following a user more than once"
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/users/{userID}/follow [put]
 func (app application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r.Context())
 
@@ -44,6 +72,20 @@ func (app application) followUserHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UnfollowUser godoc
+//
+//	@Summary		Unfollows a user
+//	@Description	Unfollows a user by ID
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path	int	true	"User ID"
+//	@Success		200		"User unfollowed"
+//	@Failure		400		{object}	apiError	"User payload missing"
+//	@Failure		404		{object}	apiError	"User not found"
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/users/{userID}/unfollow [put]
 func (app application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r.Context())
 

@@ -7,11 +7,16 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type apiResponse struct {
+	Data any `json:"data"`
+}
+
+type apiError struct {
+	Error string `json:"error"`
+}
+
 func (app application) jsonResponse(w http.ResponseWriter, status int, data any) error {
-	type envelope struct {
-		Data any `json:"data"`
-	}
-	return writeJSON(w, status, envelope{Data: data})
+	return writeJSON(w, status, apiResponse{Data: data})
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) error {
@@ -31,11 +36,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, dest any) error {
 }
 
 func writeJSONError(w http.ResponseWriter, status int, message string) error {
-	type envelope struct {
-		Error string `json:"error"`
-	}
-
-	return writeJSON(w, status, envelope{
+	return writeJSON(w, status, apiError{
 		Error: message,
 	})
 }
