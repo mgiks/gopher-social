@@ -16,6 +16,20 @@ type CreatePostPayload struct {
 	Tags    []string `json:"tags"`
 }
 
+// CreatePost godoc
+//
+//	@Summary		Creates a post
+//	@Description	Creates a post using title, content and tags
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		CreatePostPayload	true	"Payload for post creation"
+//	@Success		201		{object}	apiResponse{data=store.Post}
+//	@Failure		400		{object}	apiError
+//	@Failure		404		{object}	apiError
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/posts/ [post]
 func (app application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
@@ -31,8 +45,8 @@ func (app application) createPostHandler(w http.ResponseWriter, r *http.Request)
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
+		Tags:    payload.Tags,
 		// TODO: Change after auth
-		Tags:   payload.Tags,
 		UserID: 1,
 	}
 
@@ -46,6 +60,20 @@ func (app application) createPostHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// GetPost godoc
+//
+//	@Summary		Gets a post
+//	@Description	Gets a post by id
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int	true	"Post ID"
+//	@Success		200		{object}	apiResponse{data=store.Post}
+//	@Failure		400		{object}	apiError
+//	@Failure		404		{object}	apiError
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [get]
 func (app application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r.Context())
 
@@ -62,6 +90,19 @@ func (app application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeletePost godoc
+//
+//	@Summary		Deletes a post
+//	@Description	Deletes a post by id
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int			true	"Post ID"
+//	@Success		204		string		{}			"Post deleted"
+//	@Failure		400		{object}	apiError	"Post not found"
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [delete]
 func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "postID")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -86,9 +127,25 @@ func (app application) deletePostHandler(w http.ResponseWriter, r *http.Request)
 type UpdatePostPayload struct {
 	Title   *string  `json:"title" validate:"omitempty,max=100"`
 	Content *string  `json:"content" validate:"omitempty,max=1000"`
-	Tags    []string `json:"tags"`
+	Tags    []string `json:"tags" validate:"omitempty"`
 }
 
+// UpdatePost godoc
+//
+//	@Summary		Updates a post
+//	@Description	Updates a post by id using title or content or tags
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int					true	"Post ID"
+//	@Param			payload	body		UpdatePostPayload	true	"Payload for post updating"
+//	@Success		200		{object}	apiResponse{data=store.Post}
+//	@Failure		400		{object}	apiError
+//	@Failure		404		{object}	apiError
+//	@Failure		409		{object}	apiError
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID}/ [patch]
 func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r.Context())
 
@@ -120,7 +177,6 @@ func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request)
 		default:
 			app.internalServerError(w, r, err)
 		}
-		app.internalServerError(w, r, err)
 		return
 	}
 
