@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/lib/pq"
 )
@@ -169,7 +168,8 @@ func (s PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFe
 		WHERE (f.follower_id = $1 OR p.user_id = $1) 
 			AND (p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') 
 			AND ($5 <@ p.tags OR $5 = '{}')
-			AND ($6::timestamptz <= p.created_at AND p.created_at < $7::timestamptz)
+			AND ($6::timestamptz IS NULL OR $6::timestamptz <= p.created_at)
+			AND ($7::timestamptz IS NULL OR p.created_at < $7::timestamptz)
 		GROUP BY p.id, u.username
 		ORDER BY p.created_at ` + fq.Sort + ` 
 		LIMIT $2
@@ -178,8 +178,6 @@ func (s PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFe
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
-
-	fmt.Println(fq.Since, fq.Until)
 
 	rows, err := s.db.QueryContext(
 		ctx,

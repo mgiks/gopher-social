@@ -13,8 +13,8 @@ type PaginatedFeedQuery struct {
 	Sort   string   `json:"sort" validate:"oneof=asc desc"`
 	Tags   []string `json:"tags" validate:"max=5"`
 	Search string   `json:"search" validate:"max=100"`
-	Since  string   `json:"since"`
-	Until  string   `json:"until"`
+	Since  *string  `json:"since" validate:"omitnil,datetime=2006-01-02T15:04:05Z07:00"`
+	Until  *string  `json:"until" validate:"omitnil,datetime=2006-01-02T15:04:05Z07:00"`
 }
 
 func (fq PaginatedFeedQuery) Parse(r *http.Request) (PaginatedFeedQuery, error) {
@@ -61,7 +61,7 @@ func (fq PaginatedFeedQuery) Parse(r *http.Request) (PaginatedFeedQuery, error) 
 		if err != nil {
 			return fq, err
 		}
-		fq.Since = s
+		fq.Since = &s
 	}
 
 	until := qs.Get("until")
@@ -70,16 +70,16 @@ func (fq PaginatedFeedQuery) Parse(r *http.Request) (PaginatedFeedQuery, error) 
 		if err != nil {
 			return fq, err
 		}
-		fq.Until = u
+		fq.Until = &u
 	}
 
 	return fq, nil
 }
 
 func parseTime(s string) (string, error) {
-	t, err := time.Parse(time.DateTime, s)
+	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		return "", err
 	}
-	return t.Format(time.DateTime), nil
+	return t.Format(time.RFC3339), nil
 }

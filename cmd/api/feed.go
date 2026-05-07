@@ -12,8 +12,6 @@ func (app application) getUserFeedHandler(w http.ResponseWriter, r *http.Request
 		Offset: 0,
 		Sort:   "desc",
 		Tags:   []string{},
-		Since:  "-infinity",
-		Until:  "+infinity",
 	}
 
 	fq, err := fq.Parse(r)
