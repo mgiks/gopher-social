@@ -94,34 +94,25 @@ func (s PostStore) GetByID(ctx context.Context, id int64) (Post, error) {
 }
 
 func (s PostStore) DeleteByID(ctx context.Context, id int64) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	defer tx.Rollback()
+	query := `
+		DELETE FROM posts WHERE id = $1
+	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	query := `
-		DELETE FROM comments WHERE id = $1
-	`
-	if err := execQueryWithTx(ctx, tx, query, id); err != nil {
-		if !errors.Is(err, ErrNotFound) {
-			return err
-		}
-	}
-
-	query = `
-		DELETE FROM posts WHERE id = $1
-	`
-	if err := execQueryWithTx(ctx, tx, query, id); err != nil {
+	res, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
+	count, err := res.RowsAffected()
+	if err != nil {
 		return err
+	}
+
+	if count < 1 {
+		return ErrNotFound
 	}
 
 	return nil
@@ -216,22 +207,4 @@ func (s PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFe
 	}
 
 	return feed, nil
-}
-
-func execQueryWithTx(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
-	res, err := tx.ExecContext(ctx, query, args...)
-	if err != nil {
-		return err
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if count < 1 {
-		return ErrNotFound
-	}
-
-	return nil
 }
