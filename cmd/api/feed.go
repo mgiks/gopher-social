@@ -39,7 +39,7 @@ func (app application) getUserFeedHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := validateJSON(fq); err != nil {
+	if err := app.validator.ValidateJSON(fq); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}

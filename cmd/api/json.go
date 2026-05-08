@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type apiResponse struct {
@@ -39,10 +37,4 @@ func writeJSONError(w http.ResponseWriter, status int, message string) error {
 	return writeJSON(w, status, apiError{
 		Error: message,
 	})
-}
-
-var validate = validator.New(validator.WithRequiredStructEnabled())
-
-func validateJSON(data any) error {
-	return validate.Struct(data)
 }

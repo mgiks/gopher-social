@@ -37,7 +37,7 @@ func (app application) createPostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := validateJSON(payload); err != nil {
+	if err := app.validator.ValidateJSON(payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -155,7 +155,7 @@ func (app application) updatePostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := validateJSON(payload); err != nil {
+	if err := app.validator.ValidateJSON(payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}

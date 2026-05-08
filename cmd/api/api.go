@@ -11,13 +11,15 @@ import (
 
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
 	"github.com/mgiks/gopher-social/internal/store"
+	"github.com/mgiks/gopher-social/internal/validator"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type application struct {
-	config config
-	store  store.Store
-	logger *zap.SugaredLogger
+	config    config
+	store     store.Store
+	logger    *zap.SugaredLogger
+	validator validator.Validator
 }
 
 type config struct {

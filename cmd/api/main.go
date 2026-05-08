@@ -4,6 +4,7 @@ import (
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/store"
+	"github.com/mgiks/gopher-social/internal/validator"
 	"go.uber.org/zap"
 )
 
@@ -58,10 +59,13 @@ func main() {
 
 	store := store.NewStore(db)
 
+	validator := validator.New()
+
 	app := application{
-		config: cfg,
-		store:  store,
-		logger: logger,
+		config:    cfg,
+		store:     store,
+		logger:    logger,
+		validator: validator,
 	}
 
 	mux := app.mount()
