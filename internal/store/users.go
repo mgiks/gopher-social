@@ -18,7 +18,7 @@ type UserStore struct {
 	db *sql.DB
 }
 
-func (s UserStore) Create(ctx context.Context, user *User) error {
+func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
 		INSERT INTO users (username, password, email)
 		VALUES ($1, $2, $3) RETURNING id, created_at
@@ -27,7 +27,7 @@ func (s UserStore) Create(ctx context.Context, user *User) error {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	err := s.db.QueryRowContext(
+	err := tx.QueryRowContext(
 		ctx,
 		query,
 		user.Username,
@@ -38,7 +38,15 @@ func (s UserStore) Create(ctx context.Context, user *User) error {
 		&user.CreatedAt,
 	)
 	if err != nil {
-		return err
+		pqErr, ok := err.(*pq.Error)
+		switch {
+		case ok && pqErr.Code == "23505" && pqErr.Constraint == "users_email_key":
+			return ErrDuplicateEmail
+		case ok && pqErr.Code == "23505" && pqErr.Constraint == "user_username_key":
+			return ErrDuplicateUsername
+		default:
+			return err
+		}
 	}
 
 	return nil
