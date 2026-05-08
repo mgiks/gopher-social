@@ -80,7 +80,7 @@ func (app application) followUserHandler(w http.ResponseWriter, r *http.Request)
 //	@Accept			json
 //	@Produce		json
 //	@Param			userID	path	int	true	"User ID"
-//	@Success		200		"User unfollowed"
+//	@Success		204		"User unfollowed"
 //	@Failure		400		{object}	apiError	"User payload missing"
 //	@Failure		404		{object}	apiError	"User not found"
 //	@Failure		500		{object}	apiError
