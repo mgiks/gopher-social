@@ -6,7 +6,7 @@ import (
 	"github.com/mgiks/gopher-social/internal/store"
 )
 
-// GetUserFeed godoc
+// getUserFeedHandler godoc
 //
 //	@Summary		Gets an authenticated user's feed
 //	@Description	Gets a user's feed

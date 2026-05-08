@@ -10,7 +10,7 @@ type HealthData struct {
 	Version string `json:"version"`
 }
 
-// HealthCheck godoc
+// healthCheckHandler godoc
 //
 //	@Summary		Returns a healthcheck
 //	@Description	Returns a healthcheck

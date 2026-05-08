@@ -16,7 +16,7 @@ type CreatePostPayload struct {
 	Tags    []string `json:"tags"`
 }
 
-// CreatePost godoc
+// createPostHandler godoc
 //
 //	@Summary		Creates a post
 //	@Description	Creates a post using title, content and tags
@@ -60,7 +60,7 @@ func (app application) createPostHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// GetPost godoc
+// getPostHandler godoc
 //
 //	@Summary		Gets a post
 //	@Description	Gets a post by id
@@ -90,7 +90,7 @@ func (app application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DeletePost godoc
+// deletePostHandler godoc
 //
 //	@Summary		Deletes a post
 //	@Description	Deletes a post by id
@@ -130,7 +130,7 @@ type UpdatePostPayload struct {
 	Tags    []string `json:"tags" validate:"omitempty"`
 }
 
-// UpdatePost godoc
+// updatePostHandler godoc
 //
 //	@Summary		Updates a post
 //	@Description	Updates a post by id using title or content or tags

@@ -10,7 +10,7 @@ import (
 	"github.com/mgiks/gopher-social/internal/store"
 )
 
-// GetUser godoc
+// getUserHandler godoc
 //
 //	@Summary		Fetches a user profile
 //	@Description	Fetches a user profile by ID
@@ -34,7 +34,7 @@ type FollowUserPayload struct {
 	UserID int64 `json:"user_id" validate:"required"`
 }
 
-// FollowUser godoc
+// followUserHandler godoc
 //
 //	@Summary		Follows a user
 //	@Description	Follows a user by ID
@@ -72,7 +72,7 @@ func (app application) followUserHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UnfollowUser godoc
+// unfollowUserHandler godoc
 //
 //	@Summary		Unfollows a user
 //	@Description	Unfollows a user by ID
