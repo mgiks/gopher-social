@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
 
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
 	"github.com/mgiks/gopher-social/internal/store"
@@ -17,6 +17,7 @@ import (
 type application struct {
 	config config
 	store  store.Store
+	logger *zap.SugaredLogger
 }
 
 type config struct {
@@ -91,7 +92,7 @@ func (app application) run(mux http.Handler) error {
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Printf("server has started at %s", app.config.port)
+	app.logger.Infow("server has started", "addr", app.config.port, "env", app.config.env)
 
 	return srv.ListenAndServe()
 }

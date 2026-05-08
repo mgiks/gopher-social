@@ -1,11 +1,10 @@
 package main
 
 import (
-	"log"
-
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/store"
+	"go.uber.org/zap"
 )
 
 const apiVersion = "0.0.2"
@@ -39,6 +38,11 @@ func main() {
 		env: env.GetString("ENV", "development"),
 	}
 
+	loggerConfig := zap.NewDevelopmentConfig()
+	loggerConfig.DisableStacktrace = true
+	logger := zap.Must(loggerConfig.Build()).Sugar()
+	defer logger.Sync()
+
 	db, err := db.New(
 		cfg.db.url,
 		cfg.db.maxOpenConns,
@@ -46,20 +50,21 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Println("database connection pool established")
+	logger.Info("database connection pool established")
 
 	store := store.NewStore(db)
 
 	app := application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	mux := app.mount()
 
-	log.Fatal(app.run(mux))
+	app.logger.Fatal(app.run(mux))
 }
