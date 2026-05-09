@@ -5,6 +5,7 @@ import (
 
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
+	"github.com/mgiks/gopher-social/internal/mailer"
 	"github.com/mgiks/gopher-social/internal/store"
 	"github.com/mgiks/gopher-social/internal/validator"
 	"go.uber.org/zap"
@@ -30,8 +31,9 @@ const apiVersion = "0.0.2"
 // @name						Authorization
 func main() {
 	cfg := config{
-		port:   env.GetString("PORT", ":8080"),
-		apiURL: env.GetString("EXTERNAL_URL", "localhost:8080"),
+		port:        env.GetString("PORT", ":8080"),
+		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
+		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:4000"),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://admin:adminpassword@localhost:5434/gopher-social?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
@@ -40,7 +42,14 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
-			exp: time.Hour * 24 * 3, // 3 days
+			exp:       time.Hour * 24 * 3, // 3 days
+			fromEmail: env.GetString("FROM_EMAIL", ""),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
+			resend: resendConfig{
+				apiKey: env.GetString("RESEND_API_KEY", ""),
+			},
 		},
 	}
 
@@ -66,11 +75,17 @@ func main() {
 
 	validator := validator.New()
 
+	mailer, err := mailer.NewResend(cfg.mail.resend.apiKey, cfg.mail.fromEmail)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	app := application{
 		config:    cfg,
 		store:     store,
 		logger:    logger,
 		validator: validator,
+		mailer:    mailer,
 	}
 
 	mux := app.mount()

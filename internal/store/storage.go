@@ -26,6 +26,7 @@ type Store struct {
 		GetByID(context.Context, int64) (User, error)
 		CreateAndInvite(ctx context.Context, user *User, token string, invitationExpiry time.Duration) error
 		Activate(ctx context.Context, token string) error
+		Delete(context.Context, int64) error
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]Comment, error)
