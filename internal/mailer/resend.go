@@ -1,9 +1,7 @@
 package mailer
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"log"
 	"math"
 	"time"
@@ -34,19 +32,7 @@ func (m ResendMailer) Send(templateFile string, username, email string, data any
 		return nil
 	}
 
-	tmpl, err := template.ParseFS(FS, "templates/"+templateFile)
-	if err != nil {
-		return err
-	}
-
-	subject := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(subject, "subject", data)
-	if err != nil {
-		return err
-	}
-
-	body := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(body, "body", data)
+	letter, err := createLetter(templateFile, data)
 	if err != nil {
 		return err
 	}
@@ -54,8 +40,8 @@ func (m ResendMailer) Send(templateFile string, username, email string, data any
 	params := &resend.SendEmailRequest{
 		From:    m.fromEmail,
 		To:      []string{email},
-		Subject: subject.String(),
-		Html:    body.String(),
+		Subject: letter.subject,
+		Html:    letter.body,
 	}
 
 	for i := range maxRetries {

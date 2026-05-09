@@ -32,24 +32,12 @@ func (m SendGridMailer) Send(templateFile string, username, email string, data a
 	from := mail.NewEmail(FromName, m.fromEmail)
 	to := mail.NewEmail(username, email)
 
-	tmpl, err := template.ParseFS(FS, "templates/"+templateFile)
+	letter, err := createLetter(templateFile, data)
 	if err != nil {
 		return err
 	}
 
-	subject := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(subject, "subject", data)
-	if err != nil {
-		return err
-	}
-
-	body := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(body, "body", data)
-	if err != nil {
-		return err
-	}
-
-	message := mail.NewSingleEmail(from, subject.String(), to, "", body.String())
+	message := mail.NewSingleEmail(from, letter.subject, to, "", letter.body)
 
 	message.SetMailSettings(&mail.MailSettings{
 		SandboxMode: &mail.Setting{
