@@ -1,8 +1,6 @@
 package mailer
 
 import (
-	"log"
-
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )

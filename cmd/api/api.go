@@ -45,6 +45,7 @@ type mailConfig struct {
 	fromEmail string
 	sendGrid  sendGridConfig
 	resend    resendConfig
+	mailTrap  mailTrapConfig
 }
 
 type sendGridConfig struct {
@@ -52,6 +53,10 @@ type sendGridConfig struct {
 }
 
 type resendConfig struct {
+	apiKey string
+}
+
+type mailTrapConfig struct {
 	apiKey string
 }
 

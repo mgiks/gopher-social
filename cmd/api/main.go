@@ -50,6 +50,9 @@ func main() {
 			resend: resendConfig{
 				apiKey: env.GetString("RESEND_API_KEY", ""),
 			},
+			mailTrap: mailTrapConfig{
+				apiKey: env.GetString("MAILTRAP_API_KEY", ""),
+			},
 		},
 	}
 
@@ -75,7 +78,7 @@ func main() {
 
 	validator := validator.New()
 
-	mailer, err := mailer.NewResend(cfg.mail.resend.apiKey, cfg.mail.fromEmail)
+	mailer, err := mailer.NewMailTrap(cfg.mail.mailTrap.apiKey, cfg.mail.fromEmail)
 	if err != nil {
 		logger.Fatal(err)
 	}
