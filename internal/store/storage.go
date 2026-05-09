@@ -24,6 +24,8 @@ type Store struct {
 	Users interface {
 		Create(context.Context, *sql.Tx, *User) error
 		GetByID(context.Context, int64) (User, error)
+		CreateAndInvite(ctx context.Context, user *User, token string, invitationExpiry time.Duration) error
+		Activate(ctx context.Context, token string) error
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]Comment, error)
@@ -42,4 +44,18 @@ func NewStore(db *sql.DB) Store {
 		Comments:  CommentStore{db: db},
 		Followers: FollowerStore{db: db},
 	}
+}
+
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
