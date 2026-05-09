@@ -48,7 +48,7 @@ func constructLetter(templateFile string, data any) (letter, error) {
 
 	return letter{
 		subject: subject.String(),
-		body:    subject.String(),
+		body:    body.String(),
 	}, nil
 }
 
