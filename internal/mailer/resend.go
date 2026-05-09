@@ -2,9 +2,6 @@ package mailer
 
 import (
 	"fmt"
-	"log"
-	"math"
-	"time"
 
 	"github.com/resend/resend-go/v3"
 )
@@ -32,7 +29,7 @@ func (m ResendMailer) Send(templateFile string, username, email string, data any
 		return nil
 	}
 
-	letter, err := createLetter(templateFile, data)
+	letter, err := constructLetter(templateFile, data)
 	if err != nil {
 		return err
 	}
@@ -44,19 +41,8 @@ func (m ResendMailer) Send(templateFile string, username, email string, data any
 		Html:    letter.body,
 	}
 
-	for i := range maxRetries {
-		response, err := m.client.Emails.Send(params)
-		if err != nil {
-			log.Printf("Failed to send email to %v, attempt %d of of %d\n", email, i+1, maxRetries)
-			log.Printf("Error: %v\n", err.Error())
-
-			// exponential backoff
-			secsToWait := math.Pow(float64(2), float64(i+1))
-			time.Sleep(time.Second * time.Duration(secsToWait))
-			continue
-		}
-		log.Printf("Email with id %v successfully sent!", response.Id)
-		return nil
-	}
-	return fmt.Errorf("failed to send email after %d attempts", maxRetries)
+	return retry(maxRetries, func() (string, error) {
+		_, err := m.client.Emails.Send(params)
+		return email, err
+	})
 }
