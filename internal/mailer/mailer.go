@@ -60,7 +60,7 @@ func retry(retryCount int, sendEmail func() (string, error)) error {
 			log.Printf("Error: %v\n", err.Error())
 
 			// exponential backoff
-			secsToWait := math.Pow(float64(2), float64(i+1))
+			secsToWait := math.Pow(float64(2), float64(i))
 			time.Sleep(time.Second * time.Duration(secsToWait))
 			continue
 		}
