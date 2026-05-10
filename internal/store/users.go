@@ -176,11 +176,11 @@ func (s UserStore) update(ctx context.Context, tx *sql.Tx, user User) error {
 
 func (s UserStore) Delete(ctx context.Context, id int64) error {
 	return withTx(s.db, ctx, func(tx *sql.Tx) error {
-		if err := s.delete(ctx, tx, id); err != nil {
+		if err := s.deleteUserInvitations(ctx, tx, id); err != nil {
 			return err
 		}
 
-		if err := s.deleteUserInvitations(ctx, tx, id); err != nil {
+		if err := s.delete(ctx, tx, id); err != nil {
 			return err
 		}
 
