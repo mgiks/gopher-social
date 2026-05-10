@@ -104,7 +104,12 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, UserWithToken{User: *user, Token: plainToken}); err != nil {
+	var response any = user
+	if !isProdEnv {
+		response = UserWithToken{User: *user, Token: plainToken}
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, response); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
