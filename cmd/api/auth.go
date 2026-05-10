@@ -111,9 +111,9 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 
 func (app application) retry(retryCount int, sender mailer.Sender) error {
 	for i := range retryCount {
-		receiverEmail, err := sender.Send()
+		err := sender.Send()
 		if err != nil {
-			app.logger.Warnw("Failed to send email", "receiverEmail", receiverEmail, "attempt", fmt.Sprintf("%v of %v", i+1, retryCount))
+			app.logger.Warnw("Failed to send email", "attempt", fmt.Sprintf("%v of %v", i+1, retryCount))
 			app.logger.Warn("Error:", err.Error())
 
 			// exponential backoff

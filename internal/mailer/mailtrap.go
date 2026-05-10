@@ -39,18 +39,16 @@ func (m MailTrapMailer) NewSender(templateFile string, username, email string, d
 	message.AddAlternative("text/html", letter.body)
 
 	return sender{
-		sender:        gomail.NewDialer("live.smtp.mailtrap.io", 587, "api", m.apiKey),
-		message:       message,
-		receiverEmail: email,
+		sender:  gomail.NewDialer("live.smtp.mailtrap.io", 587, "api", m.apiKey),
+		message: message,
 	}, nil
 }
 
 type sender struct {
-	message       *gomail.Message
-	sender        *gomail.Dialer
-	receiverEmail string
+	message *gomail.Message
+	sender  *gomail.Dialer
 }
 
-func (s sender) Send() (string, error) {
-	return s.receiverEmail, s.sender.DialAndSend(s.message)
+func (s sender) Send() error {
+	return s.sender.DialAndSend(s.message)
 }

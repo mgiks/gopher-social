@@ -20,7 +20,7 @@ type SenderCreator interface {
 }
 
 type Sender interface {
-	Send() (receiverEmail string, err error)
+	Send() (err error)
 }
 
 type letter struct {
