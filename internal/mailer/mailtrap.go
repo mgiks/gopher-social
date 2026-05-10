@@ -21,14 +21,14 @@ func NewMailTrap(apiKey, fromEmail string) (MailTrapMailer, error) {
 	}, nil
 }
 
-func (m MailTrapMailer) Send(templateFile string, username, email string, data any, isSandbox bool) error {
+func (m MailTrapMailer) NewSender(templateFile string, username, email string, data any, isSandbox bool) (Sender, error) {
 	if isSandbox {
-		return nil
+		return nil, nil
 	}
 
 	letter, err := constructLetter(templateFile, data)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	message := gomail.NewMessage()
@@ -38,9 +38,19 @@ func (m MailTrapMailer) Send(templateFile string, username, email string, data a
 	message.SetHeader("Subject", letter.subject)
 	message.AddAlternative("text/html", letter.body)
 
-	dialer := gomail.NewDialer("live.smtp.mailtrap.io", 587, "api", m.apiKey)
+	return sender{
+		sender:        gomail.NewDialer("live.smtp.mailtrap.io", 587, "api", m.apiKey),
+		message:       message,
+		receiverEmail: email,
+	}, nil
+}
 
-	return retry(maxRetries, func() (string, error) {
-		return m.fromEmail, dialer.DialAndSend(message)
-	})
+type sender struct {
+	message       *gomail.Message
+	sender        *gomail.Dialer
+	receiverEmail string
+}
+
+func (s sender) Send() (string, error) {
+	return s.receiverEmail, s.sender.DialAndSend(s.message)
 }

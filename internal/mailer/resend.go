@@ -41,8 +41,6 @@ func (m ResendMailer) Send(templateFile string, username, email string, data any
 		Html:    letter.body,
 	}
 
-	return retry(maxRetries, func() (string, error) {
-		_, err := m.client.Emails.Send(params)
-		return email, err
-	})
+	_, err = m.client.Emails.Send(params)
+	return err
 }

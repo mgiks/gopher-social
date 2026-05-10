@@ -21,7 +21,7 @@ type application struct {
 	store     store.Store
 	logger    *zap.SugaredLogger
 	validator validator.Validator
-	mailer    mailer.Client
+	mailer    mailer.SenderCreator
 }
 
 type config struct {

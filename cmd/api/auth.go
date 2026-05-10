@@ -4,7 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mgiks/gopher-social/internal/mailer"
@@ -85,8 +87,13 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 
 	isProdEnv := app.config.env == "production"
 
-	err = app.mailer.Send(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, !isProdEnv)
+	emailSender, err := app.mailer.NewSender(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, !isProdEnv)
 	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err = app.retry(3, emailSender); err != nil {
 		app.logger.Errorw("error sending welcome email", "error", err)
 
 		if err := app.store.Users.Delete(r.Context(), user.ID); err != nil {
@@ -100,4 +107,22 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 	if err := app.jsonResponse(w, http.StatusCreated, UserWithToken{User: *user, Token: plainToken}); err != nil {
 		app.internalServerError(w, r, err)
 	}
+}
+
+func (app application) retry(retryCount int, sender mailer.Sender) error {
+	for i := range retryCount {
+		receiverEmail, err := sender.Send()
+		if err != nil {
+			app.logger.Warnw("Failed to send email", "receiverEmail", receiverEmail, "attempt", fmt.Sprintf("%v of %v", i+1, retryCount))
+			app.logger.Warn("Error:", err.Error())
+
+			// exponential backoff
+			secsToWait := math.Pow(float64(2), float64(i))
+			time.Sleep(time.Second * time.Duration(secsToWait))
+			continue
+		}
+		app.logger.Info("Email sent succesfully")
+		return nil
+	}
+	return fmt.Errorf("failed to send email after %d attempts", retryCount)
 }

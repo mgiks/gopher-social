@@ -38,8 +38,6 @@ func (m SendGridMailer) Send(templateFile string, username, email string, data a
 		},
 	})
 
-	return retry(maxRetries, func() (string, error) {
-		_, err := m.client.Send(message)
-		return email, err
-	})
+	_, err = m.client.Send(message)
+	return err
 }
