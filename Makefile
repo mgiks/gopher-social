@@ -12,6 +12,14 @@ migrate-up:
 migrate-down:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) down $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: migrate-down-all
+migrate-down-all:
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) down -all
+
+.PHONY: migrate-force
+migrate-force:	
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) force $(filter-out $@,$(MAKECMDGOALS))
+
 .PHONY: seed
 seed:
 	@go run cmd/migrate/seed/main.go
