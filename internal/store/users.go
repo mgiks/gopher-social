@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +14,7 @@ import (
 var (
 	ErrDuplicateEmail    = errors.New("a user with that email already exists")
 	ErrDuplicateUsername = errors.New("a user with that username already exists")
+	ErrIncorrectPassword = errors.New("incorrect password")
 )
 
 type User struct {
@@ -37,6 +39,18 @@ func (p *password) Set(text string) error {
 
 	p.text = &text
 	p.hash = hash
+
+	return nil
+}
+
+func (p *password) Check(text string) error {
+	if len(p.hash) == 0 {
+		return fmt.Errorf("hash not set")
+	}
+
+	if err := bcrypt.CompareHashAndPassword(p.hash, []byte(text)); err != nil {
+		return ErrIncorrectPassword
+	}
 
 	return nil
 }

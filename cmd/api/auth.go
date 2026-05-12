@@ -178,6 +178,16 @@ func (app application) createTokenHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if err := user.Password.Check(payload.Password); err != nil {
+		switch err {
+		case store.ErrIncorrectPassword:
+			app.unauthorizedResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
 	claims := jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(app.config.auth.token.exp).Unix(),
