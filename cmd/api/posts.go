@@ -31,6 +31,8 @@ type CreatePostPayload struct {
 //	@Security		ApiKeyAuth
 //	@Router			/posts/ [post]
 func (app application) createPostHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+
 	var payload CreatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -46,8 +48,7 @@ func (app application) createPostHandler(w http.ResponseWriter, r *http.Request)
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		// TODO: Change after auth
-		UserID: 1,
+		UserID:  user.ID,
 	}
 
 	if err := app.store.Posts.Create(r.Context(), post); err != nil {

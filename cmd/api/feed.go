@@ -26,6 +26,8 @@ import (
 //	@Security		ApiKeyAuth
 //	@Router			/users/feed [get]
 func (app application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+
 	fq := store.PaginatedFeedQuery{
 		Limit:  20,
 		Offset: 0,
@@ -44,8 +46,7 @@ func (app application) getUserFeedHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// TODO: Change 1 to userID after auth
-	feed, err := app.store.Posts.GetUserFeed(r.Context(), 1, fq)
+	feed, err := app.store.Posts.GetUserFeed(r.Context(), user.ID, fq)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
