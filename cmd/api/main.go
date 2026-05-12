@@ -54,7 +54,12 @@ func main() {
 				apiKey: env.GetString("MAILTRAP_API_KEY", ""),
 			},
 		},
-	}
+		auth: authConfig{
+			basic: basicConfig{
+				username: env.GetString("BASIC_AUTH_USERNAME", "admin"),
+				password: env.GetString("BASIC_AUTH_PASSWORD", "admin"),
+			},
+		}}
 
 	loggerConfig := zap.NewDevelopmentConfig()
 	loggerConfig.DisableStacktrace = true
