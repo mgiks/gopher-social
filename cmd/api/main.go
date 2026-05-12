@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/mgiks/gopher-social/internal/auth"
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/mailer"
@@ -59,6 +60,11 @@ func main() {
 				username: env.GetString("BASIC_AUTH_USERNAME", "admin"),
 				password: env.GetString("BASIC_AUTH_PASSWORD", "admin"),
 			},
+			token: tokenConfig{
+				secret: env.GetString("TOKEN_AUTH_SECRET", "example"),
+				exp:    time.Hour * 24 * 3, // days
+				iss:    "gophersocial",
+			},
 		}}
 
 	loggerConfig := zap.NewDevelopmentConfig()
@@ -88,12 +94,19 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.token.secret,
+		cfg.auth.token.iss,
+		cfg.auth.token.iss,
+	)
+
 	app := application{
-		config:    cfg,
-		store:     store,
-		logger:    logger,
-		validator: validator,
-		mailer:    mailer,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		validator:     validator,
+		mailer:        mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	mux := app.mount()

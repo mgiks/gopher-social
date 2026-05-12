@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
+	"github.com/mgiks/gopher-social/internal/auth"
 	"github.com/mgiks/gopher-social/internal/mailer"
 	"github.com/mgiks/gopher-social/internal/store"
 	"github.com/mgiks/gopher-social/internal/validator"
@@ -18,11 +19,12 @@ import (
 )
 
 type application struct {
-	config    config
-	store     store.Store
-	logger    *zap.SugaredLogger
-	validator validator.Validator
-	mailer    mailer.SenderCreator
+	config        config
+	store         store.Store
+	logger        *zap.SugaredLogger
+	validator     validator.Validator
+	mailer        mailer.SenderCreator
+	authenticator auth.Authenticator
 }
 
 type config struct {
@@ -64,11 +66,18 @@ type mailTrapConfig struct {
 
 type authConfig struct {
 	basic basicConfig
+	token tokenConfig
 }
 
 type basicConfig struct {
 	username string
 	password string
+}
+
+type tokenConfig struct {
+	secret string
+	exp    time.Duration
+	iss    string
 }
 
 func (app application) mount() http.Handler {
@@ -125,6 +134,7 @@ func (app application) mount() http.Handler {
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
+			r.Post("/token", app.createTokenHandler)
 		})
 	})
 

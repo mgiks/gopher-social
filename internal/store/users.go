@@ -82,7 +82,7 @@ func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 func (s UserStore) GetByID(ctx context.Context, id int64) (User, error) {
 	query := `
 		SELECT id, email, username, password, created_at FROM users
-		WHERE id = $1
+		WHERE id = $1 AND is_active = true
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
@@ -97,7 +97,7 @@ func (s UserStore) GetByID(ctx context.Context, id int64) (User, error) {
 		&user.ID,
 		&user.Email,
 		&user.Username,
-		&user.Password,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
@@ -147,17 +147,66 @@ func (s UserStore) Activate(ctx context.Context, token string) error {
 	})
 }
 
-func (s UserStore) update(ctx context.Context, tx *sql.Tx, user User) error {
+func (s UserStore) Delete(ctx context.Context, id int64) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.deleteUserInvitations(ctx, tx, id); err != nil {
+			return err
+		}
+
+		if err := s.delete(ctx, tx, id); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+// ID        int64    `json:"id"`
+// Username  string   `json:"username"`
+// Email     string   `json:"email"`
+// Password  password `json:"-"`
+// CreatedAt string   `json:"created_at"`
+// IsActive  bool     `json:"is_active"`
+
+func (s UserStore) GetByEmail(ctx context.Context, email string) (User, error) {
 	query := `
-		UPDATE users
-		SET email = $1, username = $2, is_active = $3
-		WHERE id = $4
+		SELECT id, username, email, password, created_at FROM users 
+		WHERE email = $1 AND is_active = true
+	`
+
+	var user User
+	err := s.db.QueryRow(
+		query,
+		email,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password.hash,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return User{}, ErrNotFound
+		default:
+			return User{}, err
+		}
+	}
+
+	return user, nil
+}
+
+func (s UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
+	query := `
+		DELETE FROM users WHERE id = $1
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	res, err := tx.ExecContext(ctx, query, user.Email, user.Username, user.IsActive, user.ID)
+	res, err := tx.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
@@ -174,29 +223,17 @@ func (s UserStore) update(ctx context.Context, tx *sql.Tx, user User) error {
 	return nil
 }
 
-func (s UserStore) Delete(ctx context.Context, id int64) error {
-	return withTx(s.db, ctx, func(tx *sql.Tx) error {
-		if err := s.deleteUserInvitations(ctx, tx, id); err != nil {
-			return err
-		}
-
-		if err := s.delete(ctx, tx, id); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (s UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
+func (s UserStore) update(ctx context.Context, tx *sql.Tx, user User) error {
 	query := `
-		DELETE FROM users WHERE id = $1
+		UPDATE users
+		SET email = $1, username = $2, is_active = $3
+		WHERE id = $4
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	res, err := tx.ExecContext(ctx, query, id)
+	res, err := tx.ExecContext(ctx, query, user.Email, user.Username, user.IsActive, user.ID)
 	if err != nil {
 		return err
 	}

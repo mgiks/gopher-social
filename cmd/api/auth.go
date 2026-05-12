@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/mgiks/gopher-social/internal/mailer"
 	"github.com/mgiks/gopher-social/internal/store"
@@ -93,7 +94,7 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err = app.retry(3, emailSender); err != nil {
+	if err = app.retry(3, emailSender, isProdEnv); err != nil {
 		app.logger.Errorw("error sending welcome email", "error", err)
 
 		if err := app.store.Users.Delete(r.Context(), user.ID); err != nil {
@@ -114,7 +115,10 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (app application) retry(retryCount int, sender mailer.Sender) error {
+func (app application) retry(retryCount int, sender mailer.Sender, isProd bool) error {
+	if !isProd {
+		return nil
+	}
 	for i := range retryCount {
 		err := sender.Send()
 		if err != nil {
@@ -130,4 +134,66 @@ func (app application) retry(retryCount int, sender mailer.Sender) error {
 		return nil
 	}
 	return fmt.Errorf("failed to send email after %d attempts", retryCount)
+}
+
+type CreateUserTokenPayload struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+// createTokenHandler godoc
+//
+//	@Summary		Creates a token
+//	@Description	Creates a token for a user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		CreateUserTokenPayload	true	"User credentials"
+//	@Success		201		{object}	apiResponse{data=string}
+//	@Failure		400		{object}	apiError
+//	@Failure		401		{object}	apiError
+//	@Failure		500		{object}	apiError
+//	@Security		ApiKeyAuth
+//	@Router			/auth/token [post]
+func (app application) createTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var payload CreateUserTokenPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := app.validator.ValidateJSON(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user, err := app.store.Users.GetByEmail(r.Context(), payload.Email)
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.unauthorizedResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	claims := jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(app.config.auth.token.exp).Unix(),
+		"iat": time.Now().Unix(),
+		"nbf": time.Now().Unix(),
+		"iss": app.config.auth.token.iss,
+		"aud": app.config.auth.token.iss,
+	}
+
+	token, err := app.authenticator.GenerateToken(claims)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, token); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
