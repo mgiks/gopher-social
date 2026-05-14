@@ -20,6 +20,10 @@ migrate-down-all:
 migrate-force:	
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) force $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: migration-version
+migration-version:
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) version
+
 .PHONY: seed
 seed:
 	@go run cmd/migrate/seed/main.go
