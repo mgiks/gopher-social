@@ -52,17 +52,18 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 
-	role, err := app.store.Roles.GetByName(ctx, "user")
-	if err != nil {
-		app.internalServerError(w, r, err)
+	roleName := "user"
+	if _, err := app.store.Roles.GetByName(ctx, roleName); err != nil {
+		app.internalServerError(w, r, fmt.Errorf("role %v does not exist: %w", roleName, err))
 		return
 	}
 
 	user := &store.User{
 		Username: payload.Username,
 		Email:    payload.Email,
-		RoleId:   role.ID,
-		Role:     role,
+		Role: store.Role{
+			Name: roleName,
+		},
 	}
 
 	if err := user.Password.Set(payload.Password); err != nil {
@@ -75,7 +76,7 @@ func (app application) registerUserHandler(w http.ResponseWriter, r *http.Reques
 	hash := sha256.Sum256([]byte(plainToken))
 	hashToken := hex.EncodeToString(hash[:])
 
-	err = app.store.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
+	err := app.store.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
 	if err != nil {
 		switch err {
 		case store.ErrDuplicateEmail, store.ErrDuplicateUsername:
