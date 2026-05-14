@@ -15,6 +15,7 @@ var (
 	ErrDuplicateEmail    = errors.New("a user with that email already exists")
 	ErrDuplicateUsername = errors.New("a user with that username already exists")
 	ErrIncorrectPassword = errors.New("incorrect password")
+	ErrRoleNotFound      = errors.New("role with such id does not exist")
 )
 
 type User struct {
@@ -24,6 +25,8 @@ type User struct {
 	Password  password `json:"-"`
 	CreatedAt string   `json:"created_at"`
 	IsActive  bool     `json:"is_active"`
+	RoleId    int64    `json:"-"`
+	Role      Role     `json:"role"`
 }
 
 type password struct {
@@ -60,9 +63,9 @@ type UserStore struct {
 }
 
 func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
-	query := `
-		INSERT INTO users (username, password, email)
-		VALUES ($1, $2, $3) RETURNING id, created_at
+	query2 := `
+		INSERT INTO users (username, password, email, role_id)
+		VALUES ($1, $2, $3, $4) RETURNING id, created_at
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
@@ -70,14 +73,16 @@ func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 
 	err := tx.QueryRowContext(
 		ctx,
-		query,
+		query2,
 		user.Username,
 		user.Password.hash,
 		user.Email,
+		user.RoleId,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
 	)
+
 	if err != nil {
 		pqErr, ok := err.(*pq.Error)
 		switch {
@@ -90,13 +95,38 @@ func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		}
 	}
 
+	query2 = `
+		SELECT id, name, level, description FROM roles WHERE id = $1
+	`
+	err = tx.QueryRowContext(
+		ctx,
+		query2,
+		user.RoleId,
+	).Scan(
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Level,
+		&user.Role.Description,
+	)
+
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return ErrRoleNotFound
+		default:
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (s UserStore) GetByID(ctx context.Context, id int64) (User, error) {
 	query := `
-		SELECT id, email, username, password, created_at FROM users
-		WHERE id = $1 AND is_active = true
+		SELECT u.id, u.email, u.username, u.password, u.created_at, u.role_id, 
+		r.id, r.name, r.level, r.description
+		FROM users u JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1 AND u.is_active = true
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
@@ -113,6 +143,11 @@ func (s UserStore) GetByID(ctx context.Context, id int64) (User, error) {
 		&user.Username,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.RoleId,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Level,
+		&user.Role.Description,
 	)
 
 	if err != nil {
@@ -175,29 +210,33 @@ func (s UserStore) Delete(ctx context.Context, id int64) error {
 	})
 }
 
-// ID        int64    `json:"id"`
-// Username  string   `json:"username"`
-// Email     string   `json:"email"`
-// Password  password `json:"-"`
-// CreatedAt string   `json:"created_at"`
-// IsActive  bool     `json:"is_active"`
-
 func (s UserStore) GetByEmail(ctx context.Context, email string) (User, error) {
 	query := `
-		SELECT id, username, email, password, created_at FROM users 
-		WHERE email = $1 AND is_active = true
+		SELECT u.id, u.email, u.username, u.password, u.created_at, u.role_id, 
+		r.id, r.name, r.level, r.description
+		FROM users u JOIN roles r ON u.role_id = r.id
+		WHERE u.email = $1 AND u.is_active = true
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	var user User
-	err := s.db.QueryRow(
+	err := s.db.QueryRowContext(
+		ctx,
 		query,
 		email,
 	).Scan(
 		&user.ID,
-		&user.Username,
 		&user.Email,
+		&user.Username,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.RoleId,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Level,
+		&user.Role.Description,
 	)
 
 	if err != nil {

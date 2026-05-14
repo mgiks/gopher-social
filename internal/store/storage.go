@@ -37,6 +37,9 @@ type Store struct {
 		Follow(ctx context.Context, followeeID, followerID int64) error
 		Unfollow(ctx context.Context, followeeID, followerID int64) error
 	}
+	Roles interface {
+		GetByName(context.Context, string) (Role, error)
+	}
 }
 
 func NewStore(db *sql.DB) Store {
@@ -45,6 +48,7 @@ func NewStore(db *sql.DB) Store {
 		Users:     UserStore{db: db},
 		Comments:  CommentStore{db: db},
 		Followers: FollowerStore{db: db},
+		Roles:     RoleStore{db: db},
 	}
 }
 
