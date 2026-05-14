@@ -88,7 +88,7 @@ func (s UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		switch {
 		case ok && pqErr.Code == "23505" && pqErr.Constraint == "users_email_key":
 			return ErrDuplicateEmail
-		case ok && pqErr.Code == "23505" && pqErr.Constraint == "user_username_key":
+		case ok && pqErr.Code == "23505" && pqErr.Constraint == "users_username_key":
 			return ErrDuplicateUsername
 		default:
 			return err
