@@ -13,7 +13,7 @@ import (
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
 	"github.com/mgiks/gopher-social/internal/auth"
 	"github.com/mgiks/gopher-social/internal/mailer"
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 	"github.com/mgiks/gopher-social/internal/validator"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )

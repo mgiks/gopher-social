@@ -7,7 +7,7 @@ import (
 	"log"
 	"math/rand/v2"
 
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 )
 
 func Seed(store store.Store, db *sql.DB) {

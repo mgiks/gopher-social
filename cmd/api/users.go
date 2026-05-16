@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 )
 
 // getUserHandler godoc

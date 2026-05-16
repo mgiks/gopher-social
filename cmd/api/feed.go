@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 )
 
 // getUserFeedHandler godoc

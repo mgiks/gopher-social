@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 )
 
 func (app application) BasicAuthMiddleware() func(http.Handler) http.Handler {
