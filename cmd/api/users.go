@@ -27,11 +27,11 @@ func (app application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userID")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
-		app.internalServerError(w, r, err)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	user, err := app.store.Users.GetByID(r.Context(), id)
+	user, err := app.getUser(r.Context(), id)
 	if err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):

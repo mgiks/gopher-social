@@ -55,7 +55,7 @@ func (app application) AuthTokenMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
+		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			app.unauthorizedResponse(w, r, fmt.Errorf("'Authorization' header is malformed"))
 			return
@@ -76,13 +76,15 @@ func (app application) AuthTokenMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := app.store.Users.GetByID(r.Context(), userID)
+		ctx := r.Context()
+
+		user, err := app.getUser(ctx, userID)
 		if err != nil {
 			app.unauthorizedResponse(w, r, err)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userCtx, user)
+		ctx = context.WithValue(ctx, userCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -119,4 +121,30 @@ func (app application) checkRolePrecedence(ctx context.Context, user store.User,
 	}
 
 	return user.Role.Level >= role.Level, nil
+}
+
+func (app application) getUser(ctx context.Context, userID int64) (store.User, error) {
+	if app.config.redis.enabled {
+		cacheUser, err := app.cache.Users.Get(ctx, userID)
+		if err != nil {
+			return store.User{}, err
+		}
+
+		if cacheUser != nil {
+			return *cacheUser, nil
+		}
+	}
+
+	dbUser, err := app.store.Users.GetByID(ctx, userID)
+	if err != nil {
+		return store.User{}, err
+	}
+
+	if app.config.redis.enabled {
+		if err := app.cache.Users.Set(ctx, dbUser); err != nil {
+			return store.User{}, err
+		}
+	}
+
+	return dbUser, nil
 }

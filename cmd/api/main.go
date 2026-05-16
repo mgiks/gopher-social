@@ -7,8 +7,10 @@ import (
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/mailer"
+	"github.com/mgiks/gopher-social/internal/store/cache"
 	store "github.com/mgiks/gopher-social/internal/store/db"
 	"github.com/mgiks/gopher-social/internal/validator"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -32,7 +34,7 @@ const apiVersion = "0.0.2"
 // @name						Authorization
 func main() {
 	cfg := config{
-		port:        env.GetString("PORT", ":8080"),
+		port:        env.GetString("BACKEND_PORT", ":8080"),
 		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
 		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
 		db: dbConfig{
@@ -40,6 +42,12 @@ func main() {
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
+		},
+		redis: redisConfig{
+			addr:     env.GetString("REDIS_ADDR", "localhost:6379"),
+			password: env.GetString("REDIS_PASSWORD", ""),
+			db:       env.GetInt("REDIS_DB", 0),
+			enabled:  env.GetBool("REDIS_ENABLED", false),
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
@@ -67,8 +75,16 @@ func main() {
 			},
 		}}
 
-	loggerConfig := zap.NewDevelopmentConfig()
-	loggerConfig.DisableStacktrace = true
+	var loggerConfig zap.Config
+
+	switch cfg.env {
+	case "development":
+		loggerConfig = zap.NewDevelopmentConfig()
+		loggerConfig.DisableStacktrace = true
+	case "production":
+		loggerConfig = zap.NewProductionConfig()
+	}
+
 	logger := zap.Must(loggerConfig.Build()).Sugar()
 	defer logger.Sync()
 
@@ -85,7 +101,14 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
+	var rdb *redis.Client
+	if cfg.redis.enabled {
+		rdb = cache.NewRedisClient(cfg.redis.addr, cfg.redis.password, cfg.redis.db)
+		logger.Info("redis cache connection established")
+	}
+
 	store := store.NewStore(db)
+	cacheStore := cache.NewCacheStore(rdb)
 
 	validator := validator.New()
 
@@ -103,6 +126,7 @@ func main() {
 	app := application{
 		config:        cfg,
 		store:         store,
+		cache:         cacheStore,
 		logger:        logger,
 		validator:     validator,
 		mailer:        mailer,

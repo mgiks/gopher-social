@@ -13,6 +13,7 @@ import (
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
 	"github.com/mgiks/gopher-social/internal/auth"
 	"github.com/mgiks/gopher-social/internal/mailer"
+	"github.com/mgiks/gopher-social/internal/store/cache"
 	store "github.com/mgiks/gopher-social/internal/store/db"
 	"github.com/mgiks/gopher-social/internal/validator"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -21,6 +22,7 @@ import (
 type application struct {
 	config        config
 	store         store.Store
+	cache         cache.Store
 	logger        *zap.SugaredLogger
 	validator     validator.Validator
 	mailer        mailer.SenderCreator
@@ -35,6 +37,14 @@ type config struct {
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig
+	redis       redisConfig
+}
+
+type redisConfig struct {
+	addr     string
+	password string
+	db       int
+	enabled  bool
 }
 
 type dbConfig struct {

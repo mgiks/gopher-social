@@ -61,6 +61,7 @@ var usernames = []string{
 
 func generateUsers(num int) []*store.User {
 	users := make([]*store.User, num)
+	bools := [2]bool{true, false}
 
 	for i := range num {
 		username := usernames[i%len(usernames)] + fmt.Sprintf("%d", i)
@@ -71,6 +72,7 @@ func generateUsers(num int) []*store.User {
 			Role: store.Role{
 				Name: "user",
 			},
+			IsActive: bools[rand.N(2)],
 		}
 		user.Password.Set("")
 		users[i] = user

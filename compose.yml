@@ -3,7 +3,7 @@ name: gopher-social
 services:
   db:
     image: postgres:18.3-alpine
-    container_name: postgres-db
+    container_name: gopher-social-postgres
     environment:
       POSTGRES_DB: gopher-social
       PGDATABASE: gopher-social
@@ -11,10 +11,50 @@ services:
       PGUSER: admin
       POSTGRES_PASSWORD: adminpassword
       PGPASSWORD: adminpassword
+    networks:
+      - backend
     volumes:
       - db-data:/var/lib/postgresql
     ports:
       - "5434:5432"
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: gopher-social-pgadmin
+    networks:
+      - backend
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "127.0.0.1:2020:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.6.3-alpine
+    restart: unless-stopped
+    container_name: gopher-social-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: gopher-social-redis-commander
+    hostname: redis-commander
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
 volumes:
   db-data:
+
+networks:
+  backend:
+    driver: bridge

@@ -5,7 +5,7 @@ import (
 
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
-	"github.com/mgiks/gopher-social/internal/store"
+	store "github.com/mgiks/gopher-social/internal/store/db"
 )
 
 func main() {
