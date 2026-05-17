@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const apiVersion = "0.0.2"
+const apiVersion = "0.0.1"
 
 //	@title			GopherSocial API
 //	@description	API for GopherSocial, a social network for gophers
