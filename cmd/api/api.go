@@ -18,6 +18,7 @@ import (
 	"github.com/mgiks/gopher-social/docs" // This is required to generate swagger docs
 	"github.com/mgiks/gopher-social/internal/auth"
 	"github.com/mgiks/gopher-social/internal/mailer"
+	"github.com/mgiks/gopher-social/internal/ratelimiter"
 	"github.com/mgiks/gopher-social/internal/store/cache"
 	store "github.com/mgiks/gopher-social/internal/store/db"
 	"github.com/mgiks/gopher-social/internal/validator"
@@ -32,6 +33,7 @@ type application struct {
 	validator     validator.Validator
 	mailer        mailer.SenderCreator
 	authenticator auth.Authenticator
+	rateLimiter   ratelimiter.Limiter
 }
 
 type config struct {
@@ -43,6 +45,13 @@ type config struct {
 	frontendURL string
 	auth        authConfig
 	redis       redisConfig
+	ratelimiter ratelimiterConfig
+}
+
+type ratelimiterConfig struct {
+	requestsPerTimeFrame int
+	timeFrame            time.Duration
+	enabled              bool
 }
 
 type redisConfig struct {
@@ -117,6 +126,7 @@ func (app application) mount(useLogger bool) http.Handler {
 
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(app.RateLimiterMiddleware)
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"testing"
 )
 
 func TestGetUser(t *testing.T) {
-	app := newTestApplication(t, false)
+	app := newTestApplication(t, config{}, false)
 	mux := app.mount(false)
 
 	t.Run("should not allow unathenticated requests", func(t *testing.T) {
@@ -37,7 +36,5 @@ func TestGetUser(t *testing.T) {
 		rr := executeRequest(req, mux)
 
 		checkResponseCode(t, http.StatusOK, rr.Code)
-
-		log.Println(rr.Body)
 	})
 }

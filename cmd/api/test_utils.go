@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/mgiks/gopher-social/internal/auth"
+	"github.com/mgiks/gopher-social/internal/ratelimiter"
 	"github.com/mgiks/gopher-social/internal/store/cache"
 	store "github.com/mgiks/gopher-social/internal/store/db"
 	"go.uber.org/zap"
 )
 
-func newTestApplication(t *testing.T, useLogger bool) application {
+func newTestApplication(t *testing.T, config config, useLogger bool) application {
 	t.Helper()
 
 	var logger *zap.SugaredLogger
@@ -25,12 +26,18 @@ func newTestApplication(t *testing.T, useLogger bool) application {
 	mockStore := store.NewMockStore()
 	mockCacheStore := cache.NewMockStore()
 	authenticator := auth.NewMockAuthenticator()
+	ratelimiter := ratelimiter.NewFixedWindowLimiter(
+		config.ratelimiter.requestsPerTimeFrame,
+		config.ratelimiter.timeFrame,
+	)
 
 	return application{
+		config:        config,
 		logger:        logger,
 		store:         mockStore,
 		cache:         mockCacheStore,
 		authenticator: authenticator,
+		rateLimiter:   ratelimiter,
 	}
 
 }

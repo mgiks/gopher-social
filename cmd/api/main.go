@@ -7,6 +7,7 @@ import (
 	"github.com/mgiks/gopher-social/internal/db"
 	"github.com/mgiks/gopher-social/internal/env"
 	"github.com/mgiks/gopher-social/internal/mailer"
+	"github.com/mgiks/gopher-social/internal/ratelimiter"
 	"github.com/mgiks/gopher-social/internal/store/cache"
 	store "github.com/mgiks/gopher-social/internal/store/db"
 	"github.com/mgiks/gopher-social/internal/validator"
@@ -73,7 +74,13 @@ func main() {
 				exp:    time.Hour * 24 * 3, // days
 				iss:    "gophersocial",
 			},
-		}}
+		},
+		ratelimiter: ratelimiterConfig{
+			requestsPerTimeFrame: env.GetInt("RATELIMITER_REQUEST_COUNT", 20),
+			timeFrame:            time.Second * 5,
+			enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
+	}
 
 	var loggerConfig zap.Config
 
@@ -123,6 +130,11 @@ func main() {
 		cfg.auth.token.iss,
 	)
 
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.ratelimiter.requestsPerTimeFrame,
+		cfg.ratelimiter.timeFrame,
+	)
+
 	app := application{
 		config:        cfg,
 		store:         store,
@@ -131,6 +143,7 @@ func main() {
 		validator:     validator,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		rateLimiter:   rateLimiter,
 	}
 
 	mux := app.mount(true)
