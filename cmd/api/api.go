@@ -90,7 +90,7 @@ type tokenConfig struct {
 	iss    string
 }
 
-func (app application) mount() http.Handler {
+func (app application) mount(useLogger bool) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -104,7 +104,12 @@ func (app application) mount() http.Handler {
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+
+	// Needed to turn off logging during tests
+	if useLogger {
+		r.Use(middleware.Logger)
+	}
+
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 

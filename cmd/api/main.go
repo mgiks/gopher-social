@@ -133,7 +133,7 @@ func main() {
 		authenticator: jwtAuthenticator,
 	}
 
-	mux := app.mount()
+	mux := app.mount(true)
 
 	app.logger.Fatal(app.run(mux))
 }
